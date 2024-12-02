@@ -1,24 +1,13 @@
-FROM node:15 as development
-LABEL org.opencontainers.image.source https://github.com/eddiehubcommunity/LinkFree
-
+FROM node:18
+LABEL org.opencontainers.image.source https://github.com/eddiehubcommunity/BioDrop
 WORKDIR /usr/src/app
 
 COPY package*.json ./
-RUN npm install --ignore-scripts
+RUN npm ci  --omit=dev --ignore-scripts
 COPY . .
 
-RUN sed -i 's/0.0.0/'`npm -s run env echo '$npm_package_version'`'/g' public/app.json
+RUN --mount=type=secret,id=MONGO,target=./.env npm run build
+
 RUN npm run build
 
-FROM node:15 as production
-LABEL org.opencontainers.image.source https://github.com/eddiehubcommunity/LinkFree
-
-ARG NODE_ENV=production
-
-WORKDIR /usr/src/app
-
-COPY package*.json ./
-RUN npm install --production --ignore-scripts
-COPY . .
-COPY --from=development /usr/src/app/build ./build
-CMD ["npm", "run", "start:prod"]
+CMD ["npm", "start"]
